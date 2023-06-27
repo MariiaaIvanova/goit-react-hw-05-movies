@@ -1,96 +1,96 @@
-import { useEffect, useState } from 'react';
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { useState, useEffect, Suspense } from 'react';
+import { useParams, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { getDetailsMovies } from 'components/services/apiService';
 import { Loader } from 'components/Loader/Loader';
-import {Container, List, ListInfo, LinkInfo, Button } from './MovieDetails.styled';
+import { ListInfo, LinkInfo, Title, Button } from './MovieDetails.styled';
+import  MovieCard  from 'components/MovieCard/MovieCard';
+import { toast } from 'react-hot-toast';
 
 const MovieDetails = () => {
+  const [loader, setLoader] = useState(true);
   const { movieId } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [movieDetails, setMovieDetails] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [previousRoute, setPreviousRoute] = useState('/');
+  const [movieDetails, setMovieDetails] = useState({
+    backdrop_path: '',
+    genres: [],
+    overview: '',
+    poster_path: '',
+    release_date: '',
+    title: '',
+    vote_average: '',
+  });
 
   useEffect(() => {
-    const getMovieDetailsFilms = () => {
-      setLoading(true);
+    async function fetchMovieDetails() {
+      try {
+        const movieDetails = await getDetailsMovies(movieId);
 
-      getDetailsMovies(movieId)
-        .then(detailMovie => {
-          setMovieDetails(detailMovie);
-        })
-        .catch(error => {
-          console.log(error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    };
+        if (Object.keys(movieDetails).length === 0) {
+          return toast('Sorry, movie not found! Please try again');
+        }
+        setMovieDetails(movieDetails);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoader(false);
+      }
+    }
 
-    getMovieDetailsFilms();
-  }, [movieId]);
+    fetchMovieDetails();
 
-  if (!movieDetails) {
-    return;
-  }
+    if (location.state && location.state.from) {
+      setPreviousRoute(location.state.from);
+    }
+  }, [movieId, location.state]);
 
-  const {
-    title,
-    release_date,
-    popularity,
-    overview,
-    genres,
-    poster_path,
-    original_title,
-  } = movieDetails || {};
+  const onGoBack = () => {
+    navigate(previousRoute);
+  };
+
+  const { poster_path, title, release_date, vote_average, overview, genres } =
+    movieDetails;
+
+  const poster = poster_path ? `https://image.tmdb.org/t/p/w500${poster_path}` : 'https://via.placeholder.com/200x300?text=Poster+Not+Found';
+  const year = release_date.slice(0, 4);
+  const vote = Math.floor(vote_average * 10);
+  const movieGenres = genres.map(genre => genre.name).join(', ');
 
   return (
     <>
-      <Link to={location.state?.from ?? '/'}>
-        <Button type="button">Go back</Button>
-      </Link>
-      {loading && <Loader />}
-
-      {movieDetails && (
-        <Container>
-          <img
-            width="300px"
-            src={
-              poster_path? `https://image.tmdb.org/t/p/w500${poster_path}` : `https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg`
-            }
-            alt={original_title}
+      <main>
+        <Button type="button" onClick={onGoBack}>
+            Go back
+        </Button>
+        {movieDetails && (
+          <MovieCard
+            title={title}
+            year={year}
+            poster={poster}
+            vote={vote}
+            overview={overview}
+            genres={movieGenres}
           />
-          <div>
-            <h1>
-              {title} ({release_date.slice(0, 4)})
-            </h1>
-            <p>User score: {popularity}</p>
-            <h2>Overview</h2>
-            <p>{overview}</p>
-            <h2>Genres</h2>
-            <List>
-              {genres.map(genre => (
-                <li key={genre.id}>{genre.name}</li>
-              ))}
-            </List>
-          </div>
-        </Container>
-      )}
-      <hr />
-      <div>
-        <h3>Additional information</h3>
+        )}
+
+        <Title>Additional information</Title>
         <ListInfo>
-          <li>
-            <LinkInfo to="cast">Cast</LinkInfo>
-          </li>
-          <li>
-            <LinkInfo to="reviews">Reviews</LinkInfo>
-          </li>
+          <LinkInfo to="cast">Cast</LinkInfo>
+          <LinkInfo to="reviews">Reviews</LinkInfo>
         </ListInfo>
-        <hr />
-        <Outlet />
-      </div>
+
+        <Suspense fallback={<Loader />}>
+          <Outlet />
+        </Suspense>
+      </main>
+      {loader && <Loader />}
     </>
   );
 };
 
 export default MovieDetails;
+
+
+
+

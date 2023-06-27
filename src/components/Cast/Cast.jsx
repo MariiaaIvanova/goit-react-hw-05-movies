@@ -2,51 +2,61 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getCreditsMovies } from 'components/services/apiService';
 import { Loader } from 'components/Loader/Loader';
-import { List, Text } from './Cast.styled';
+import { List } from './Cast.styled';
+import { toast } from 'react-hot-toast';
 
 const Cast = () => {
+  const [casts, setCasts] = useState([]);
+  const [error, setError] = useState(false);
+  const [loader, setLoader] = useState(true);
   const { movieId } = useParams();
-  const [cast, setCast] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchCast = () => {
-      setLoading(true);
-
-      getCreditsMovies(movieId)
-        .then(cast => {
-          setCast(cast);
-        })
-        .catch(error => {
-          console.log(error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    };
-
-    fetchCast();
+    async function fetchCasts() {
+      try {
+        const casts = await getCreditsMovies(movieId);
+        if (casts.length === 0) {
+          setError(true);
+          return toast('There are no cast! Please, try again later');
+        }
+        setCasts(casts);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoader(false);
+      }
+    }
+    fetchCasts();
   }, [movieId]);
 
   return (
-    <div>
-      {loading && <Loader />}
-      <List>
-        {cast.map(({ id, profile_path, original_name, name, character }) => (
-          <li key={id}>
-            <img
-              width="200px"
-              src={
-                profile_path ? `https://image.tmdb.org/t/p/w500${profile_path}`: `https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg`
-              }
-              alt={original_name}
-            />
-            <Text>{name}</Text>
-            <Text>Character: {character}</Text>
-          </li>
-        ))}
-      </List>
-    </div>
+    <>
+      {casts && (
+        <List>
+          {casts.map(cast => (
+            <li key={cast.cast_id}>
+              <img
+                src={
+                  cast.profile_path
+                    ? `https://image.tmdb.org/t/p/w500${cast.profile_path}`
+                    : 'https://via.placeholder.com/100x150?text=Photo+Not+Found'
+                }
+                alt={cast.name}
+                width="200"
+              />
+              <h4>{cast.name}</h4>
+              <p>Character: {cast.character}</p>
+            </li>
+          ))}
+        </List>
+      )}
+      {error && <p>We don't have cast for this movie </p>}
+      {loader && <Loader />}
+    </>
   );
 };
 export default Cast;
+
+
+
+

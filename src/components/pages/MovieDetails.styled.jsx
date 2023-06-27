@@ -1,32 +1,15 @@
 import styled from '@emotion/styled';
 import { Link } from 'react-router-dom';
 
-export const Container = styled.div`
-  display: flex;
-  margin: 25px;
-  gap: 24px;
-`;
-
-export const List = styled.ul`
-  display: inline-flex;
-  gap: 12px;
-  list-style: none;
-  
-  margin: 0;
- 
-  padding: 0;
-  list-style-type: none;
+export const Title = styled.h3`
+  font-weight: 600;
+  font-size: 24px;
+  line-height: calc(16 / 24);
+  margin-bottom: 25px;
 `;
 
 export const ListInfo = styled.ul`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  list-style: none;
-   
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
+  margin-bottom: 25px;
 `;
 
 export const LinkInfo = styled(Link)`
@@ -53,4 +36,5 @@ export const Button = styled.button`
     color: #4158d0;
     border: 3px solid #4158d0;
   }
+   margin-bottom: 25px;
 `;
